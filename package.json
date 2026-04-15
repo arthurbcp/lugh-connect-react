@@ -1,0 +1,39 @@
+{
+  "name": "lugh-connect-react",
+  "version": "0.1.0",
+  "description": "Componentes React para lugh-connect — provider, botão \"Entrar com Lugh\", consumo de créditos e badge de saldo com o design system da Lugh.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./src/styles.css"
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc && cp src/styles.css dist/styles.css",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "lugh-connect": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "lugh-connect": "file:../lugh-connect",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.6.3"
+  },
+  "keywords": ["react", "oauth2", "pkce", "lugh", "auth", "sso", "credits"],
+  "license": "UNLICENSED",
+  "sideEffects": ["*.css"]
+}
