@@ -2,6 +2,7 @@
 
 import type { JSX, ReactNode } from "react";
 import { useLugh } from "../hooks";
+import { useLughMessages } from "../i18n";
 
 export interface LughSignInButtonProps {
   children?: ReactNode;
@@ -12,13 +13,14 @@ export interface LughSignInButtonProps {
 }
 
 export function LughSignInButton({
-  children = "Entrar com Lugh",
+  children,
   className,
   showIcon = true,
   onClick,
   onError,
 }: LughSignInButtonProps): JSX.Element {
   const { signIn, loading, isSignedIn } = useLugh();
+  const t = useLughMessages();
 
   const handleClick = async (): Promise<void> => {
     onClick?.();
@@ -61,7 +63,7 @@ export function LughSignInButton({
           />
         </svg>
       )}
-      <span>{children}</span>
+      <span>{children ?? t.signInWithLugh}</span>
     </button>
   );
 }

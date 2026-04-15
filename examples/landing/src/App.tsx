@@ -10,6 +10,7 @@ import {
 
 const CLIENT_ID = import.meta.env.VITE_LUGH_CLIENT_ID ?? "demo-app";
 const AUTH_BASE = import.meta.env.VITE_LUGH_AUTH_BASE ?? "http://localhost:8080";
+const PUBLIC_TOKEN = import.meta.env.VITE_LUGH_PUBLIC_TOKEN ?? "lugh_pk_PCWC8O279cCno5UqidyPVbu0riO35iEKnOZG0tf7";
 
 export function App(): JSX.Element {
   return (
@@ -17,6 +18,9 @@ export function App(): JSX.Element {
       clientId={CLIENT_ID}
       redirectUri={window.location.origin + "/"}
       authBase={AUTH_BASE}
+      publicToken={PUBLIC_TOKEN}
+      theme="light"
+      primaryColor="red"
     >
       <Page />
     </LughProvider>

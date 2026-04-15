@@ -4,7 +4,7 @@ import { createContext, useCallback, useEffect, useMemo, useState, } from "react
 import { LughAuth, } from "lugh-connect";
 export const LughContext = createContext(null);
 const DEFAULT_AUTH_BASE = "https://api.lugh.digital";
-export function LughProvider({ clientId, redirectUri, authBase, scope, refreshSkewSeconds, children, }) {
+export function LughProvider({ clientId, redirectUri, authBase, scope, refreshSkewSeconds, publicToken, primaryColor, language, theme, children, }) {
     const [auth, setAuth] = useState(null);
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [user, setUser] = useState(null);
@@ -65,22 +65,36 @@ export function LughProvider({ clientId, redirectUri, authBase, scope, refreshSk
     const value = useMemo(() => ({
         auth,
         authBase: normalizedAuthBase,
+        publicToken,
         isSignedIn,
         user,
         loading,
         error,
+        language,
+        theme,
+        primaryColor,
         signIn,
         signOut,
     }), [
         auth,
         normalizedAuthBase,
+        publicToken,
         isSignedIn,
         user,
         loading,
         error,
+        language,
+        theme,
+        primaryColor,
         signIn,
         signOut,
     ]);
-    return _jsx(LughContext.Provider, { value: value, children: children });
+    const wrapperStyle = primaryColor
+        ? {
+            "--lugh-primary": primaryColor,
+            "--lugh-primary-hover": primaryColor,
+        }
+        : undefined;
+    return (_jsx(LughContext.Provider, { value: value, children: _jsx("div", { className: "lugh-root", "data-lugh-theme": theme, lang: language, style: wrapperStyle, children: children }) }));
 }
 //# sourceMappingURL=provider.js.map

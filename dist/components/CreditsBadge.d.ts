@@ -1,10 +1,10 @@
 import { type JSX } from "react";
 export interface LughCreditsBadgeProps {
-    /** Título do popover. Default: "Créditos". */
+    /** Título do popover. Default: tradução de `creditsTitle`. */
     title?: string;
     /** Rótulo de cada bloco de assinatura. Recebe o nome do plano. */
     blockSubscriptionLabel?: (plan: string) => string;
-    /** Rótulo dos blocos avulsos (packs). Default: "Pack extra". */
+    /** Rótulo dos blocos avulsos (packs). Default: tradução de `creditsPackLabel`. */
     blockPackLabel?: string;
     /** Texto exibido quando o saldo está zerado. */
     emptyLabel?: string;

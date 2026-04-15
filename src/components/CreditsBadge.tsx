@@ -2,18 +2,21 @@
 
 import { useEffect, useRef, useState, type JSX } from "react";
 import { useLughCredits, type CreditBlock } from "../hooks";
+import { useLughMessages } from "../i18n";
 
 export interface LughCreditsBadgeProps {
-  /** Título do popover. Default: "Créditos". */
+  /** Título do popover. Default: tradução de `creditsTitle`. */
   title?: string;
   /** Rótulo de cada bloco de assinatura. Recebe o nome do plano. */
   blockSubscriptionLabel?: (plan: string) => string;
-  /** Rótulo dos blocos avulsos (packs). Default: "Pack extra". */
+  /** Rótulo dos blocos avulsos (packs). Default: tradução de `creditsPackLabel`. */
   blockPackLabel?: string;
   /** Texto exibido quando o saldo está zerado. */
   emptyLabel?: string;
   className?: string;
 }
+
+const UPGRADE_URL = "https://app.lugh.digital/en/pricing";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -29,13 +32,17 @@ function toneFor(block: CreditBlock): Tone {
 }
 
 export function LughCreditsBadge({
-  title = "Créditos",
+  title,
   blockSubscriptionLabel = (plan) => plan.toUpperCase(),
-  blockPackLabel = "Pack extra",
-  emptyLabel = "Sem créditos disponíveis.",
+  blockPackLabel,
+  emptyLabel,
   className,
 }: LughCreditsBadgeProps): JSX.Element | null {
   const { breakdown, total, loading, error } = useLughCredits();
+  const t = useLughMessages();
+  const resolvedTitle = title ?? t.creditsTitle;
+  const resolvedPackLabel = blockPackLabel ?? t.creditsPackLabel;
+  const resolvedEmptyLabel = emptyLabel ?? t.creditsEmpty;
   const [open, setOpen] = useState<boolean>(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +78,7 @@ export function LughCreditsBadge({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={`Saldo: ${total} créditos`}
+        aria-label={t.creditsBalanceAria(total.toLocaleString())}
       >
         <svg
           viewBox="0 0 24 24"
@@ -88,7 +95,7 @@ export function LughCreditsBadge({
       {open && (
         <div className="lugh-credits__panel" role="dialog">
           <div className="lugh-credits__header">
-            <span className="lugh-credits__title">{title}</span>
+            <span className="lugh-credits__title">{resolvedTitle}</span>
           </div>
 
           <div className="lugh-credits__total">{total.toLocaleString()}</div>
@@ -109,7 +116,7 @@ export function LughCreditsBadge({
                 const tone = toneFor(block);
                 const label = block.plan
                   ? blockSubscriptionLabel(block.plan)
-                  : blockPackLabel;
+                  : resolvedPackLabel;
 
                 return (
                   <div key={block.id} className="lugh-credits__block-row">
@@ -134,8 +141,31 @@ export function LughCreditsBadge({
               })}
             </div>
           ) : (
-            <p className="lugh-credits__empty">{emptyLabel}</p>
+            <p className="lugh-credits__empty">{resolvedEmptyLabel}</p>
           )}
+
+          <a
+            className="lugh-credits__upgrade"
+            href={UPGRADE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 19V5" />
+              <path d="m5 12 7-7 7 7" />
+            </svg>
+            {t.creditsUpgrade}
+          </a>
         </div>
       )}
     </div>

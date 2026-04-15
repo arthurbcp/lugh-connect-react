@@ -1,5 +1,19 @@
 export { LughProvider, LughContext } from "./provider";
-export type { LughProviderProps, LughContextValue } from "./provider";
+export type {
+  LughProviderProps,
+  LughContextValue,
+  LughTheme,
+} from "./provider";
+
+export {
+  SUPPORTED_LANGUAGES,
+  DEFAULT_LANGUAGE,
+  ERROR_MESSAGES,
+  isSupportedLanguage,
+  getMessages,
+  useLughMessages,
+} from "./i18n";
+export type { LughLanguage, LughMessages } from "./i18n";
 
 export { useLugh, useLughCredits } from "./hooks";
 export type {
@@ -11,7 +25,10 @@ export type {
 export { LughSignInButton } from "./components/SignInButton";
 export type { LughSignInButtonProps } from "./components/SignInButton";
 
-export { LughConsumeCreditsButton } from "./components/ConsumeCreditsButton";
+export {
+  LughConsumeCreditsButton,
+  InsufficientCreditsError,
+} from "./components/ConsumeCreditsButton";
 export type {
   LughConsumeCreditsButtonProps,
   ConsumeCreditsResult,

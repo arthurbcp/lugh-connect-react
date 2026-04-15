@@ -2,11 +2,12 @@
 
 import { useCallback, useContext, useEffect, useState } from "react";
 import { LughContext, type LughContextValue } from "./provider";
+import { ERROR_MESSAGES } from "./i18n";
 
 export function useLugh(): LughContextValue {
   const ctx = useContext(LughContext);
   if (!ctx) {
-    throw new Error("useLugh: precisa estar dentro de <LughProvider>");
+    throw new Error(ERROR_MESSAGES.providerMissing);
   }
   return ctx;
 }

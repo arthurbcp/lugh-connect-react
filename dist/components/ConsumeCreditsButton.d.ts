@@ -15,8 +15,19 @@ export interface LughConsumeCreditsButtonProps {
     disabled?: boolean;
     /** Texto exibido enquanto a request está em andamento. */
     loadingLabel?: ReactNode;
+    /**
+     * Ação do clique (pode ser async). O consumo de créditos só é executado
+     * após a resolução desta função. Se ela lançar, o consumo é abortado.
+     */
+    onClick?: () => void | Promise<void>;
     onSuccess?: (result: ConsumeCreditsResult) => void;
     onError?: (err: Error) => void;
 }
-export declare function LughConsumeCreditsButton({ action, amount, children, className, disabled, loadingLabel, onSuccess, onError, }: LughConsumeCreditsButtonProps): JSX.Element;
+export declare class InsufficientCreditsError extends Error {
+    readonly code: "insufficient_credits";
+    readonly required: number;
+    readonly available: number;
+    constructor(required: number, available: number, message: string);
+}
+export declare function LughConsumeCreditsButton({ action, amount, children, className, disabled, loadingLabel, onClick, onSuccess, onError, }: LughConsumeCreditsButtonProps): JSX.Element;
 //# sourceMappingURL=ConsumeCreditsButton.d.ts.map

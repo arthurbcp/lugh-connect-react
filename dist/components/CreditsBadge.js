@@ -2,6 +2,8 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from "react";
 import { useLughCredits } from "../hooks";
+import { useLughMessages } from "../i18n";
+const UPGRADE_URL = "https://app.lugh.digital/en/pricing";
 const DAY_MS = 24 * 60 * 60 * 1000;
 function toneFor(block) {
     const daysLeft = Math.max(0, Math.ceil((block.expiresAt - Date.now()) / DAY_MS));
@@ -9,8 +11,12 @@ function toneFor(block) {
         return "amber";
     return block.plan ? "primary" : "emerald";
 }
-export function LughCreditsBadge({ title = "Créditos", blockSubscriptionLabel = (plan) => plan.toUpperCase(), blockPackLabel = "Pack extra", emptyLabel = "Sem créditos disponíveis.", className, }) {
+export function LughCreditsBadge({ title, blockSubscriptionLabel = (plan) => plan.toUpperCase(), blockPackLabel, emptyLabel, className, }) {
     const { breakdown, total, loading, error } = useLughCredits();
+    const t = useLughMessages();
+    const resolvedTitle = title ?? t.creditsTitle;
+    const resolvedPackLabel = blockPackLabel ?? t.creditsPackLabel;
+    const resolvedEmptyLabel = emptyLabel ?? t.creditsEmpty;
     const [open, setOpen] = useState(false);
     const rootRef = useRef(null);
     useEffect(() => {
@@ -36,16 +42,16 @@ export function LughCreditsBadge({ title = "Créditos", blockSubscriptionLabel =
     if (loading && !breakdown)
         return null;
     const blocks = breakdown?.blocks ?? [];
-    return (_jsxs("div", { ref: rootRef, className: `lugh-credits${className ? ` ${className}` : ""}`, children: [_jsxs("button", { type: "button", className: "lugh-credits__trigger", onClick: () => setOpen((v) => !v), "aria-expanded": open, "aria-haspopup": "dialog", "aria-label": `Saldo: ${total} créditos`, children: [_jsx("svg", { viewBox: "0 0 24 24", width: "12", height: "12", fill: "currentColor", "aria-hidden": "true", children: _jsx("path", { d: "M13 2L3 14h9l-1 8 10-12h-9l1-8z" }) }), _jsx("span", { className: "lugh-credits__value", children: total.toLocaleString() })] }), open && (_jsxs("div", { className: "lugh-credits__panel", role: "dialog", children: [_jsx("div", { className: "lugh-credits__header", children: _jsx("span", { className: "lugh-credits__title", children: title }) }), _jsx("div", { className: "lugh-credits__total", children: total.toLocaleString() }), blocks.length > 0 ? (_jsx("div", { className: "lugh-credits__blocks", children: blocks.map((block) => {
+    return (_jsxs("div", { ref: rootRef, className: `lugh-credits${className ? ` ${className}` : ""}`, children: [_jsxs("button", { type: "button", className: "lugh-credits__trigger", onClick: () => setOpen((v) => !v), "aria-expanded": open, "aria-haspopup": "dialog", "aria-label": t.creditsBalanceAria(total.toLocaleString()), children: [_jsx("svg", { viewBox: "0 0 24 24", width: "12", height: "12", fill: "currentColor", "aria-hidden": "true", children: _jsx("path", { d: "M13 2L3 14h9l-1 8 10-12h-9l1-8z" }) }), _jsx("span", { className: "lugh-credits__value", children: total.toLocaleString() })] }), open && (_jsxs("div", { className: "lugh-credits__panel", role: "dialog", children: [_jsx("div", { className: "lugh-credits__header", children: _jsx("span", { className: "lugh-credits__title", children: resolvedTitle }) }), _jsx("div", { className: "lugh-credits__total", children: total.toLocaleString() }), blocks.length > 0 ? (_jsx("div", { className: "lugh-credits__blocks", children: blocks.map((block) => {
                             const percent = block.amount > 0
                                 ? Math.max(0, Math.min(100, Math.round((block.remaining / block.amount) * 100)))
                                 : 0;
                             const tone = toneFor(block);
                             const label = block.plan
                                 ? blockSubscriptionLabel(block.plan)
-                                : blockPackLabel;
+                                : resolvedPackLabel;
                             return (_jsxs("div", { className: "lugh-credits__block-row", children: [_jsxs("div", { className: "lugh-credits__block-head", children: [_jsxs("span", { className: "lugh-credits__block-label", children: [_jsx(BlockIcon, { isPack: block.plan === null }), label] }), _jsxs("span", { className: "lugh-credits__block-nums", children: [block.remaining.toLocaleString(), " /", " ", block.amount.toLocaleString()] })] }), _jsx("div", { className: "lugh-credits__bar", children: _jsx("div", { className: `lugh-credits__bar-fill lugh-credits__bar-fill--${tone}`, style: { width: `${percent}%` } }) })] }, block.id));
-                        }) })) : (_jsx("p", { className: "lugh-credits__empty", children: emptyLabel }))] }))] }));
+                        }) })) : (_jsx("p", { className: "lugh-credits__empty", children: resolvedEmptyLabel })), _jsxs("a", { className: "lugh-credits__upgrade", href: UPGRADE_URL, target: "_blank", rel: "noopener noreferrer", children: [_jsxs("svg", { viewBox: "0 0 24 24", width: "14", height: "14", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: [_jsx("path", { d: "M12 19V5" }), _jsx("path", { d: "m5 12 7-7 7 7" })] }), t.creditsUpgrade] })] }))] }));
 }
 function BlockIcon({ isPack }) {
     if (isPack) {
