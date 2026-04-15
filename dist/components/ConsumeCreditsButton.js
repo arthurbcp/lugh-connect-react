@@ -16,7 +16,7 @@ export class InsufficientCreditsError extends Error {
     }
 }
 export function LughConsumeCreditsButton({ action, amount, children, className, classOverride, disabled, loadingLabel, onClick, onSuccess, onError, }) {
-    const { auth, authBase, publicToken, isSignedIn } = useLugh();
+    const { auth, publicToken, isSignedIn } = useLugh();
     const { total, refetch } = useLughCredits();
     const t = useLughMessages();
     const [loading, setLoading] = useState(false);
@@ -46,16 +46,7 @@ export function LughConsumeCreditsButton({ action, amount, children, className, 
             if (onClick) {
                 await onClick();
             }
-            const res = await auth.fetchWithAuth(`${authBase}/credits/consume`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action, amount, publicToken }),
-            });
-            if (!res.ok) {
-                const detail = await res.text();
-                throw new Error(`PUT /credits/consume ${res.status}: ${detail}`);
-            }
-            const data = await res.json();
+            const data = await auth.api.credits.consume({ action, amount, publicToken });
             onSuccess?.({ action, amount, response: data });
             void refetch();
         }

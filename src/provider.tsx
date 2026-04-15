@@ -11,18 +11,19 @@ import {
   type ReactNode,
 } from "react";
 import {
+  DEFAULT_LUGH_API_URL,
   LughAuth,
   type LughAuthOptions,
+  type LughTheme,
   type UserClaims,
 } from "lugh-connect";
 import type { LughLanguage } from "./i18n";
 
-export type LughTheme = "dark" | "light";
+export type { LughTheme };
 
 export interface LughContextValue {
   auth: LughAuth | null;
-  authBase: string;
-  publicToken: string | undefined;
+  lughApiUrl: string;
   isSignedIn: boolean;
   user: UserClaims | null;
   loading: boolean;
@@ -39,29 +40,28 @@ export const LughContext = createContext<LughContextValue | null>(null);
 export interface LughProviderProps {
   clientId: string;
   redirectUri: string;
-  authBase?: string;
+  /**
+   * Base URL of the lugh-api authorization server (no trailing slash).
+   * Default: `https://api.lugh.digital`.
+   */
+  lughApiUrl?: string;
   scope?: string;
   refreshSkewSeconds?: number;
-  /** Public token do app registrado na Lugh (obrigatório para consumir créditos). */
-  publicToken?: string;
-  /** Cor primária do design system (override de `--lugh-primary`). */
+  /** Design system primary color (overrides `--lugh-primary`). */
   primaryColor?: string;
-  /** Código do idioma usado pelos componentes. Default: "en". */
+  /** Language used by the components. Default: `"en"`. */
   language?: LughLanguage;
-  /** Tema visual. Default: segue `prefers-color-scheme`. */
+  /** Visual theme. Default: follows `prefers-color-scheme`. */
   theme?: LughTheme;
   children: ReactNode;
 }
 
-const DEFAULT_AUTH_BASE = "https://api.lugh.digital";
-
 export function LughProvider({
   clientId,
   redirectUri,
-  authBase,
+  lughApiUrl,
   scope,
   refreshSkewSeconds,
-  publicToken,
   primaryColor,
   language,
   theme,
@@ -73,18 +73,20 @@ export function LughProvider({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const normalizedAuthBase = (authBase ?? DEFAULT_AUTH_BASE).replace(/\/$/, "");
+  const resolvedApiUrl = (lughApiUrl ?? DEFAULT_LUGH_API_URL).replace(/\/+$/, "");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
 
-    const opts: LughAuthOptions = { clientId, redirectUri };
-    if (authBase !== undefined) opts.authBase = authBase;
+    const opts: LughAuthOptions = { clientId, redirectUri, lughApiUrl: resolvedApiUrl };
     if (scope !== undefined) opts.scope = scope;
     if (refreshSkewSeconds !== undefined) {
       opts.refreshSkewSeconds = refreshSkewSeconds;
     }
+    if (language !== undefined) opts.language = language;
+    if (theme !== undefined) opts.theme = theme;
+    if (primaryColor !== undefined) opts.primaryColor = primaryColor;
 
     LughAuth.init(opts)
       .then((instance) => {
@@ -116,7 +118,16 @@ export function LughProvider({
     return () => {
       cancelled = true;
     };
-  }, [clientId, redirectUri, authBase, scope, refreshSkewSeconds]);
+  }, [
+    clientId,
+    redirectUri,
+    resolvedApiUrl,
+    scope,
+    refreshSkewSeconds,
+    language,
+    theme,
+    primaryColor,
+  ]);
 
   const signIn = useCallback(async (): Promise<void> => {
     if (!auth) throw new Error("LughProvider not initialized");
@@ -134,8 +145,7 @@ export function LughProvider({
   const value = useMemo<LughContextValue>(
     () => ({
       auth,
-      authBase: normalizedAuthBase,
-      publicToken,
+      lughApiUrl: resolvedApiUrl,
       isSignedIn,
       user,
       loading,
@@ -148,8 +158,7 @@ export function LughProvider({
     }),
     [
       auth,
-      normalizedAuthBase,
-      publicToken,
+      resolvedApiUrl,
       isSignedIn,
       user,
       loading,

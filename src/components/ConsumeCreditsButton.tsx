@@ -4,18 +4,15 @@ import { useState, type JSX, type ReactNode } from "react";
 import { useLugh, useLughCredits } from "../hooks";
 import { useLughMessages, ERROR_MESSAGES } from "../i18n";
 
-export interface ConsumeCreditsResult {
-  action: string;
-  amount: number;
-  /** Resposta crua devolvida pelo endpoint /credits/consume. */
-  response: unknown;
-}
-
 export interface LughConsumeCreditsButtonProps {
-  /** Identificador da ação de negócio que está consumindo créditos. */
-  action: string;
-  /** Quantidade de créditos a consumir (inteiro positivo). */
-  amount: number;
+  /**
+   * Quantidade de créditos que esta ação custa. Usado **apenas** para UX
+   * client-side: desabilita o botão quando `total < cost` e formata o label
+   * default. O débito real acontece no backend do integrador (dentro do
+   * `onClick`), que chama `/credits/consume` no lugh-api com a private key
+   * do app — esse valor aqui não autoriza nada.
+   */
+  cost: number;
   children?: ReactNode;
   className?: string;
   /** Substitui completamente as classes padrão do botão (`lugh-btn lugh-btn--gradient`). */
@@ -24,11 +21,14 @@ export interface LughConsumeCreditsButtonProps {
   /** Texto exibido enquanto a request está em andamento. */
   loadingLabel?: ReactNode;
   /**
-   * Ação do clique (pode ser async). O consumo de créditos só é executado
-   * após a resolução desta função. Se ela lançar, o consumo é abortado.
+   * Handler do clique. **É aqui que o integrador faz o trabalho pago** —
+   * tipicamente um `fetch` para uma rota do próprio backend que, por sua
+   * vez, chama `/credits/consume` server-to-server usando a private key do
+   * app. Pode ser sync ou async. Se lançar, o erro vira `onError`; se
+   * resolver, `onSuccess` é chamado.
    */
   onClick?: () => void | Promise<void>;
-  onSuccess?: (result: ConsumeCreditsResult) => void;
+  onSuccess?: () => void;
   onError?: (err: Error) => void;
 }
 
@@ -47,8 +47,7 @@ export class InsufficientCreditsError extends Error {
 }
 
 export function LughConsumeCreditsButton({
-  action,
-  amount,
+  cost,
   children,
   className,
   classOverride,
@@ -58,32 +57,28 @@ export function LughConsumeCreditsButton({
   onSuccess,
   onError,
 }: LughConsumeCreditsButtonProps): JSX.Element {
-  const { auth, authBase, publicToken, isSignedIn } = useLugh();
-  const { total, refetch } = useLughCredits();
+  const { isSignedIn } = useLugh();
+  const { total } = useLughCredits();
   const t = useLughMessages();
   const [loading, setLoading] = useState<boolean>(false);
   const [insufficient, setInsufficient] = useState<boolean>(false);
 
-  const hasEnough = total >= amount;
+  const hasEnough = total >= cost;
 
   const handleClick = async (): Promise<void> => {
-    if (!auth || !isSignedIn) {
+    if (!isSignedIn) {
       onError?.(new Error(ERROR_MESSAGES.notSignedIn));
       return;
     }
-    if (!Number.isInteger(amount) || amount <= 0) {
-      onError?.(new Error(ERROR_MESSAGES.invalidAmount));
-      return;
-    }
-    if (!publicToken) {
-      onError?.(new Error(ERROR_MESSAGES.missingPublicToken));
+    if (!Number.isInteger(cost) || cost < 0) {
+      onError?.(new Error(ERROR_MESSAGES.invalidCost));
       return;
     }
 
-    if (total < amount) {
+    if (total < cost) {
       setInsufficient(true);
       onError?.(
-        new InsufficientCreditsError(amount, total, t.insufficientCredits),
+        new InsufficientCreditsError(cost, total, t.insufficientCredits),
       );
       return;
     }
@@ -94,19 +89,7 @@ export function LughConsumeCreditsButton({
       if (onClick) {
         await onClick();
       }
-
-      const res = await auth.fetchWithAuth(`${authBase}/credits/consume`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, amount, publicToken }),
-      });
-      if (!res.ok) {
-        const detail = await res.text();
-        throw new Error(`PUT /credits/consume ${res.status}: ${detail}`);
-      }
-      const data: unknown = await res.json();
-      onSuccess?.({ action, amount, response: data });
-      void refetch();
+      onSuccess?.();
     } catch (err: unknown) {
       onError?.(err instanceof Error ? err : new Error(String(err)));
     } finally {
@@ -127,7 +110,7 @@ export function LughConsumeCreditsButton({
       >
         {loading
           ? (loadingLabel ?? t.consumeLoading)
-          : (children ?? t.consumeDefault(amount))}
+          : (children ?? t.consumeDefault(cost))}
       </button>
 
       {(insufficient || (isSignedIn && !hasEnough)) && (

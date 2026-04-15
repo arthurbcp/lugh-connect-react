@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import type { CreditsBreakdown } from "lugh-connect";
 import { LughContext, type LughContextValue } from "./provider";
 import { ERROR_MESSAGES } from "./i18n";
 
@@ -12,22 +13,7 @@ export function useLugh(): LughContextValue {
   return ctx;
 }
 
-export interface CreditBlock {
-  id: string;
-  plan: string | null;
-  amount: number;
-  used: number;
-  remaining: number;
-  startedAt: number;
-  expiresAt: number;
-}
-
-export interface CreditsBreakdown {
-  blocks: CreditBlock[];
-  subscription: number;
-  packs: number;
-  total: number;
-}
+export type { CreditBlock, CreditsBreakdown } from "lugh-connect";
 
 export interface UseLughCreditsResult {
   breakdown: CreditsBreakdown | null;
@@ -42,15 +28,15 @@ interface CreditsUpdateMessage {
   breakdown: CreditsBreakdown | null;
 }
 
-function toWebSocketUrl(authBase: string, accessToken: string): string {
-  const url = new URL(`${authBase}/ws/credits`);
+function toWebSocketUrl(lughApiUrl: string, accessToken: string): string {
+  const url = new URL(`${lughApiUrl}/ws/credits`);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
   url.searchParams.set("access_token", accessToken);
   return url.toString();
 }
 
 export function useLughCredits(): UseLughCreditsResult {
-  const { auth, authBase, isSignedIn } = useLugh();
+  const { auth, lughApiUrl, isSignedIn } = useLugh();
   const [breakdown, setBreakdown] = useState<CreditsBreakdown | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -63,20 +49,14 @@ export function useLughCredits(): UseLughCreditsResult {
     setLoading(true);
     setError(null);
     try {
-      const res = await auth.fetchWithAuth(`${authBase}/credits/breakdown`);
-      if (!res.ok) {
-        throw new Error(
-          `GET /credits/breakdown ${res.status}: ${await res.text()}`,
-        );
-      }
-      const data = (await res.json()) as CreditsBreakdown | null;
+      const data = await auth.api.credits.breakdown();
       setBreakdown(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }
-  }, [auth, authBase, isSignedIn]);
+  }, [auth, isSignedIn]);
 
   useEffect(() => {
     void refetch();
@@ -115,7 +95,7 @@ export function useLughCredits(): UseLughCreditsResult {
 
       let ws: WebSocket;
       try {
-        ws = new WebSocket(toWebSocketUrl(authBase, token));
+        ws = new WebSocket(toWebSocketUrl(lughApiUrl, token));
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)));
         return;
@@ -175,7 +155,7 @@ export function useLughCredits(): UseLughCreditsResult {
         }
       }
     };
-  }, [auth, authBase, isSignedIn]);
+  }, [auth, lughApiUrl, isSignedIn]);
 
   return {
     breakdown,

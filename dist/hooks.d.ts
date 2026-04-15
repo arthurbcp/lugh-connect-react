@@ -1,20 +1,7 @@
+import type { CreditsBreakdown } from "lugh-connect";
 import { type LughContextValue } from "./provider";
 export declare function useLugh(): LughContextValue;
-export interface CreditBlock {
-    id: string;
-    plan: string | null;
-    amount: number;
-    used: number;
-    remaining: number;
-    startedAt: number;
-    expiresAt: number;
-}
-export interface CreditsBreakdown {
-    blocks: CreditBlock[];
-    subscription: number;
-    packs: number;
-    total: number;
-}
+export type { CreditBlock, CreditsBreakdown } from "lugh-connect";
 export interface UseLughCreditsResult {
     breakdown: CreditsBreakdown | null;
     total: number;

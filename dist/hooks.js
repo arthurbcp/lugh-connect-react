@@ -9,14 +9,14 @@ export function useLugh() {
     }
     return ctx;
 }
-function toWebSocketUrl(authBase, accessToken) {
-    const url = new URL(`${authBase}/ws/credits`);
+function toWebSocketUrl(lughApiUrl, accessToken) {
+    const url = new URL(`${lughApiUrl}/ws/credits`);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     url.searchParams.set("access_token", accessToken);
     return url.toString();
 }
 export function useLughCredits() {
-    const { auth, authBase, isSignedIn } = useLugh();
+    const { auth, lughApiUrl, isSignedIn } = useLugh();
     const [breakdown, setBreakdown] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -28,11 +28,7 @@ export function useLughCredits() {
         setLoading(true);
         setError(null);
         try {
-            const res = await auth.fetchWithAuth(`${authBase}/credits/breakdown`);
-            if (!res.ok) {
-                throw new Error(`GET /credits/breakdown ${res.status}: ${await res.text()}`);
-            }
-            const data = (await res.json());
+            const data = await auth.api.credits.breakdown();
             setBreakdown(data);
         }
         catch (err) {
@@ -41,7 +37,7 @@ export function useLughCredits() {
         finally {
             setLoading(false);
         }
-    }, [auth, authBase, isSignedIn]);
+    }, [auth, isSignedIn]);
     useEffect(() => {
         void refetch();
     }, [refetch]);
@@ -78,7 +74,7 @@ export function useLughCredits() {
                 return;
             let ws;
             try {
-                ws = new WebSocket(toWebSocketUrl(authBase, token));
+                ws = new WebSocket(toWebSocketUrl(lughApiUrl, token));
             }
             catch (err) {
                 setError(err instanceof Error ? err : new Error(String(err)));
@@ -138,7 +134,7 @@ export function useLughCredits() {
                 }
             }
         };
-    }, [auth, authBase, isSignedIn]);
+    }, [auth, lughApiUrl, isSignedIn]);
     return {
         breakdown,
         total: breakdown?.total ?? 0,

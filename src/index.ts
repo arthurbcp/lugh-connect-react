@@ -29,10 +29,7 @@ export {
   LughConsumeCreditsButton,
   InsufficientCreditsError,
 } from "./components/ConsumeCreditsButton";
-export type {
-  LughConsumeCreditsButtonProps,
-  ConsumeCreditsResult,
-} from "./components/ConsumeCreditsButton";
+export type { LughConsumeCreditsButtonProps } from "./components/ConsumeCreditsButton";
 
 export { LughCreditsBadge } from "./components/CreditsBadge";
 export type { LughCreditsBadgeProps } from "./components/CreditsBadge";

@@ -1,10 +1,10 @@
 import { type JSX, type ReactNode } from "react";
-import { LughAuth, type UserClaims } from "lugh-connect";
+import { LughAuth, type LughTheme, type UserClaims } from "lugh-connect";
 import type { LughLanguage } from "./i18n";
-export type LughTheme = "dark" | "light";
+export type { LughTheme };
 export interface LughContextValue {
     auth: LughAuth | null;
-    authBase: string;
+    lughApiUrl: string;
     publicToken: string | undefined;
     isSignedIn: boolean;
     user: UserClaims | null;
@@ -22,18 +22,22 @@ export declare const LughContext: import("react").Context<LughContextValue | nul
 export interface LughProviderProps {
     clientId: string;
     redirectUri: string;
-    authBase?: string;
+    /**
+     * Base URL of the lugh-api authorization server (no trailing slash).
+     * Default: `https://api.lugh.digital`.
+     */
+    lughApiUrl?: string;
     scope?: string;
     refreshSkewSeconds?: number;
-    /** Public token do app registrado na Lugh (obrigatório para consumir créditos). */
+    /** Public token of the app registered on Lugh (required to consume credits). */
     publicToken?: string;
-    /** Cor primária do design system (override de `--lugh-primary`). */
+    /** Design system primary color (overrides `--lugh-primary`). */
     primaryColor?: string;
-    /** Código do idioma usado pelos componentes. Default: "en". */
+    /** Language used by the components. Default: `"en"`. */
     language?: LughLanguage;
-    /** Tema visual. Default: segue `prefers-color-scheme`. */
+    /** Visual theme. Default: follows `prefers-color-scheme`. */
     theme?: LughTheme;
     children: ReactNode;
 }
-export declare function LughProvider({ clientId, redirectUri, authBase, scope, refreshSkewSeconds, publicToken, primaryColor, language, theme, children, }: LughProviderProps): JSX.Element;
+export declare function LughProvider({ clientId, redirectUri, lughApiUrl, scope, refreshSkewSeconds, publicToken, primaryColor, language, theme, children, }: LughProviderProps): JSX.Element;
 //# sourceMappingURL=provider.d.ts.map

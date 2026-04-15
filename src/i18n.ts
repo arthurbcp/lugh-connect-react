@@ -22,9 +22,7 @@ export interface LughMessages {
 /** Error messages are always in English regardless of the selected language. */
 export const ERROR_MESSAGES = {
   notSignedIn: "user not signed in",
-  invalidAmount: "amount must be a positive integer",
-  missingPublicToken:
-    "LughProvider.publicToken is required to consume credits",
+  invalidCost: "cost must be a non-negative integer",
   providerMissing: "useLugh: must be used within <LughProvider>",
 } as const;
 

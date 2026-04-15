@@ -1,28 +1,31 @@
 "use client";
 import { jsx as _jsx } from "react/jsx-runtime";
 import { createContext, useCallback, useEffect, useMemo, useState, } from "react";
-import { LughAuth, } from "lugh-connect";
+import { DEFAULT_LUGH_API_URL, LughAuth, } from "lugh-connect";
 export const LughContext = createContext(null);
-const DEFAULT_AUTH_BASE = "https://api.lugh.digital";
-export function LughProvider({ clientId, redirectUri, authBase, scope, refreshSkewSeconds, publicToken, primaryColor, language, theme, children, }) {
+export function LughProvider({ clientId, redirectUri, lughApiUrl, scope, refreshSkewSeconds, publicToken, primaryColor, language, theme, children, }) {
     const [auth, setAuth] = useState(null);
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const normalizedAuthBase = (authBase ?? DEFAULT_AUTH_BASE).replace(/\/$/, "");
+    const resolvedApiUrl = (lughApiUrl ?? DEFAULT_LUGH_API_URL).replace(/\/+$/, "");
     useEffect(() => {
         if (typeof window === "undefined")
             return;
         let cancelled = false;
-        const opts = { clientId, redirectUri };
-        if (authBase !== undefined)
-            opts.authBase = authBase;
+        const opts = { clientId, redirectUri, lughApiUrl: resolvedApiUrl };
         if (scope !== undefined)
             opts.scope = scope;
         if (refreshSkewSeconds !== undefined) {
             opts.refreshSkewSeconds = refreshSkewSeconds;
         }
+        if (language !== undefined)
+            opts.language = language;
+        if (theme !== undefined)
+            opts.theme = theme;
+        if (primaryColor !== undefined)
+            opts.primaryColor = primaryColor;
         LughAuth.init(opts)
             .then((instance) => {
             if (cancelled)
@@ -51,7 +54,16 @@ export function LughProvider({ clientId, redirectUri, authBase, scope, refreshSk
         return () => {
             cancelled = true;
         };
-    }, [clientId, redirectUri, authBase, scope, refreshSkewSeconds]);
+    }, [
+        clientId,
+        redirectUri,
+        resolvedApiUrl,
+        scope,
+        refreshSkewSeconds,
+        language,
+        theme,
+        primaryColor,
+    ]);
     const signIn = useCallback(async () => {
         if (!auth)
             throw new Error("LughProvider not initialized");
@@ -64,7 +76,7 @@ export function LughProvider({ clientId, redirectUri, authBase, scope, refreshSk
     }, [auth]);
     const value = useMemo(() => ({
         auth,
-        authBase: normalizedAuthBase,
+        lughApiUrl: resolvedApiUrl,
         publicToken,
         isSignedIn,
         user,
@@ -77,7 +89,7 @@ export function LughProvider({ clientId, redirectUri, authBase, scope, refreshSk
         signOut,
     }), [
         auth,
-        normalizedAuthBase,
+        resolvedApiUrl,
         publicToken,
         isSignedIn,
         user,
