@@ -7,6 +7,8 @@ import { useLughMessages } from "../i18n";
 export interface LughSignInButtonProps {
   children?: ReactNode;
   className?: string;
+  /** Substitui completamente as classes padrão do botão (`lugh-btn`). */
+  classOverride?: string;
   showIcon?: boolean;
   onClick?: () => void;
   onError?: (err: Error) => void;
@@ -15,6 +17,7 @@ export interface LughSignInButtonProps {
 export function LughSignInButton({
   children,
   className,
+  classOverride,
   showIcon = true,
   onClick,
   onError,
@@ -34,7 +37,7 @@ export function LughSignInButton({
   return (
     <button
       type="button"
-      className={`lugh-btn${className ? ` ${className}` : ""}`}
+      className={`${classOverride ?? "lugh-btn"}${className ? ` ${className}` : ""}`}
       onClick={() => {
         void handleClick();
       }}

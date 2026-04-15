@@ -18,6 +18,8 @@ export interface LughConsumeCreditsButtonProps {
   amount: number;
   children?: ReactNode;
   className?: string;
+  /** Substitui completamente as classes padrão do botão (`lugh-btn lugh-btn--gradient`). */
+  classOverride?: string;
   disabled?: boolean;
   /** Texto exibido enquanto a request está em andamento. */
   loadingLabel?: ReactNode;
@@ -49,6 +51,7 @@ export function LughConsumeCreditsButton({
   amount,
   children,
   className,
+  classOverride,
   disabled,
   loadingLabel,
   onClick,
@@ -115,7 +118,7 @@ export function LughConsumeCreditsButton({
     <div className="lugh-consume">
       <button
         type="button"
-        className={`lugh-btn lugh-btn--gradient${className ? ` ${className}` : ""}`}
+        className={`${classOverride ?? "lugh-btn lugh-btn--gradient"}${className ? ` ${className}` : ""}`}
         onClick={() => {
           void handleClick();
         }}

@@ -12,6 +12,8 @@ export interface LughConsumeCreditsButtonProps {
     amount: number;
     children?: ReactNode;
     className?: string;
+    /** Substitui completamente as classes padrão do botão (`lugh-btn lugh-btn--gradient`). */
+    classOverride?: string;
     disabled?: boolean;
     /** Texto exibido enquanto a request está em andamento. */
     loadingLabel?: ReactNode;
@@ -29,5 +31,5 @@ export declare class InsufficientCreditsError extends Error {
     readonly available: number;
     constructor(required: number, available: number, message: string);
 }
-export declare function LughConsumeCreditsButton({ action, amount, children, className, disabled, loadingLabel, onClick, onSuccess, onError, }: LughConsumeCreditsButtonProps): JSX.Element;
+export declare function LughConsumeCreditsButton({ action, amount, children, className, classOverride, disabled, loadingLabel, onClick, onSuccess, onError, }: LughConsumeCreditsButtonProps): JSX.Element;
 //# sourceMappingURL=ConsumeCreditsButton.d.ts.map

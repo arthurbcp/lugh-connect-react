@@ -15,7 +15,7 @@ export class InsufficientCreditsError extends Error {
         this.available = available;
     }
 }
-export function LughConsumeCreditsButton({ action, amount, children, className, disabled, loadingLabel, onClick, onSuccess, onError, }) {
+export function LughConsumeCreditsButton({ action, amount, children, className, classOverride, disabled, loadingLabel, onClick, onSuccess, onError, }) {
     const { auth, authBase, publicToken, isSignedIn } = useLugh();
     const { total, refetch } = useLughCredits();
     const t = useLughMessages();
@@ -66,7 +66,7 @@ export function LughConsumeCreditsButton({ action, amount, children, className, 
             setLoading(false);
         }
     };
-    return (_jsxs("div", { className: "lugh-consume", children: [_jsx("button", { type: "button", className: `lugh-btn lugh-btn--gradient${className ? ` ${className}` : ""}`, onClick: () => {
+    return (_jsxs("div", { className: "lugh-consume", children: [_jsx("button", { type: "button", className: `${classOverride ?? "lugh-btn lugh-btn--gradient"}${className ? ` ${className}` : ""}`, onClick: () => {
                     void handleClick();
                 }, disabled: disabled || loading || !isSignedIn || !hasEnough, "aria-busy": loading, children: loading
                     ? (loadingLabel ?? t.consumeLoading)
