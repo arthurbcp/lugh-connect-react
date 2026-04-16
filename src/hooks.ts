@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import type { CreditsBreakdown } from "lugh-connect";
+import type { LughCreditsBreakdown } from "lugh-connect";
 import { LughContext, type LughContextValue } from "./provider";
 import { ERROR_MESSAGES } from "./i18n";
 
@@ -13,10 +13,10 @@ export function useLugh(): LughContextValue {
   return ctx;
 }
 
-export type { CreditBlock, CreditsBreakdown } from "lugh-connect";
+export type { LughCreditBlock, LughCreditsBreakdown } from "lugh-connect";
 
 export interface UseLughCreditsResult {
-  breakdown: CreditsBreakdown | null;
+  breakdown: LughCreditsBreakdown | null;
   total: number;
   loading: boolean;
   error: Error | null;
@@ -25,19 +25,20 @@ export interface UseLughCreditsResult {
 
 interface CreditsUpdateMessage {
   type: "credits.update";
-  breakdown: CreditsBreakdown | null;
+  breakdown: LughCreditsBreakdown | null;
 }
 
-function toWebSocketUrl(lughApiUrl: string, accessToken: string): string {
+function toWebSocketUrl(lughApiUrl: string, accessToken: string, env?: string): string {
   const url = new URL(`${lughApiUrl}/ws/credits`);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
   url.searchParams.set("access_token", accessToken);
+  if (env) url.searchParams.set("env", env);
   return url.toString();
 }
 
 export function useLughCredits(): UseLughCreditsResult {
-  const { auth, lughApiUrl, isSignedIn } = useLugh();
-  const [breakdown, setBreakdown] = useState<CreditsBreakdown | null>(null);
+  const { auth, lughApiUrl, isSignedIn, env } = useLugh();
+  const [breakdown, setBreakdown] = useState<LughCreditsBreakdown | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -95,7 +96,7 @@ export function useLughCredits(): UseLughCreditsResult {
 
       let ws: WebSocket;
       try {
-        ws = new WebSocket(toWebSocketUrl(lughApiUrl, token));
+        ws = new WebSocket(toWebSocketUrl(lughApiUrl, token, env));
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)));
         return;
@@ -155,11 +156,11 @@ export function useLughCredits(): UseLughCreditsResult {
         }
       }
     };
-  }, [auth, lughApiUrl, isSignedIn]);
+  }, [auth, lughApiUrl, isSignedIn, env]);
 
   return {
     breakdown,
-    total: breakdown?.total ?? 0,
+    total: env === "sandbox" ? (breakdown?.sandbox ?? 0) : (breakdown?.total ?? 0),
     loading,
     error,
     refetch,

@@ -5,10 +5,15 @@ import { useLughCredits } from "../hooks";
 import { useLughMessages } from "../i18n";
 const UPGRADE_URL = "https://app.lugh.digital/en/pricing";
 const DAY_MS = 24 * 60 * 60 * 1000;
+function isSandbox(plan) {
+    return plan?.toLowerCase() === "sandbox";
+}
 function toneFor(block) {
     const daysLeft = Math.max(0, Math.ceil((block.expiresAt - Date.now()) / DAY_MS));
     if (daysLeft <= 3)
         return "amber";
+    if (isSandbox(block.plan))
+        return "orange";
     return block.plan ? "primary" : "emerald";
 }
 export function LughCreditsBadge({ title, blockSubscriptionLabel = (plan) => plan.toUpperCase(), blockPackLabel, emptyLabel, className, }) {
@@ -50,7 +55,7 @@ export function LughCreditsBadge({ title, blockSubscriptionLabel = (plan) => pla
                             const label = block.plan
                                 ? blockSubscriptionLabel(block.plan)
                                 : resolvedPackLabel;
-                            return (_jsxs("div", { className: "lugh-credits__block-row", children: [_jsxs("div", { className: "lugh-credits__block-head", children: [_jsxs("span", { className: "lugh-credits__block-label", children: [_jsx(BlockIcon, { isPack: block.plan === null }), label] }), _jsxs("span", { className: "lugh-credits__block-nums", children: [block.remaining.toLocaleString(), " /", " ", block.amount.toLocaleString()] })] }), _jsx("div", { className: "lugh-credits__bar", children: _jsx("div", { className: `lugh-credits__bar-fill lugh-credits__bar-fill--${tone}`, style: { width: `${percent}%` } }) })] }, block.id));
+                            return (_jsxs("div", { className: "lugh-credits__block-row", children: [_jsxs("div", { className: "lugh-credits__block-head", children: [_jsxs("span", { className: `lugh-credits__block-label${tone === "orange" ? " lugh-credits__block-label--orange" : ""}`, children: [_jsx(BlockIcon, { isPack: block.plan === null }), label] }), _jsxs("span", { className: `lugh-credits__block-nums${tone === "orange" ? " lugh-credits__block-nums--orange" : ""}`, children: [block.remaining.toLocaleString(), " /", " ", block.amount.toLocaleString()] })] }), _jsx("div", { className: "lugh-credits__bar", children: _jsx("div", { className: `lugh-credits__bar-fill lugh-credits__bar-fill--${tone}`, style: { width: `${percent}%` } }) })] }, block.id));
                         }) })) : (_jsx("p", { className: "lugh-credits__empty", children: resolvedEmptyLabel })), _jsxs("a", { className: "lugh-credits__upgrade", href: UPGRADE_URL, target: "_blank", rel: "noopener noreferrer", children: [_jsxs("svg", { viewBox: "0 0 24 24", width: "14", height: "14", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: [_jsx("path", { d: "M12 19V5" }), _jsx("path", { d: "m5 12 7-7 7 7" })] }), t.creditsUpgrade] })] }))] }));
 }
 function BlockIcon({ isPack }) {

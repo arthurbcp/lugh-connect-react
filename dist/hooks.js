@@ -9,14 +9,16 @@ export function useLugh() {
     }
     return ctx;
 }
-function toWebSocketUrl(lughApiUrl, accessToken) {
+function toWebSocketUrl(lughApiUrl, accessToken, env) {
     const url = new URL(`${lughApiUrl}/ws/credits`);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     url.searchParams.set("access_token", accessToken);
+    if (env)
+        url.searchParams.set("env", env);
     return url.toString();
 }
 export function useLughCredits() {
-    const { auth, lughApiUrl, isSignedIn } = useLugh();
+    const { auth, lughApiUrl, isSignedIn, env } = useLugh();
     const [breakdown, setBreakdown] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -74,7 +76,7 @@ export function useLughCredits() {
                 return;
             let ws;
             try {
-                ws = new WebSocket(toWebSocketUrl(lughApiUrl, token));
+                ws = new WebSocket(toWebSocketUrl(lughApiUrl, token, env));
             }
             catch (err) {
                 setError(err instanceof Error ? err : new Error(String(err)));
@@ -134,10 +136,10 @@ export function useLughCredits() {
                 }
             }
         };
-    }, [auth, lughApiUrl, isSignedIn]);
+    }, [auth, lughApiUrl, isSignedIn, env]);
     return {
         breakdown,
-        total: breakdown?.total ?? 0,
+        total: env === "sandbox" ? (breakdown?.sandbox ?? 0) : (breakdown?.total ?? 0),
         loading,
         error,
         refetch,

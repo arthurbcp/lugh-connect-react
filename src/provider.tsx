@@ -13,9 +13,10 @@ import {
 import {
   DEFAULT_LUGH_API_URL,
   LughAuth,
+  type LughEnvironment,
   type LughAuthOptions,
   type LughTheme,
-  type UserClaims,
+  type LughUserClaims,
 } from "lugh-connect";
 import type { LughLanguage } from "./i18n";
 
@@ -25,12 +26,13 @@ export interface LughContextValue {
   auth: LughAuth | null;
   lughApiUrl: string;
   isSignedIn: boolean;
-  user: UserClaims | null;
+  user: LughUserClaims | null;
   loading: boolean;
   error: Error | null;
   language: LughLanguage | undefined;
   theme: LughTheme | undefined;
   primaryColor: string | undefined;
+  env: LughEnvironment | undefined;
   signIn: () => Promise<void>;
   signOut: (opts?: { revoke?: boolean }) => Promise<void>;
 }
@@ -45,7 +47,6 @@ export interface LughProviderProps {
    * Default: `https://api.lugh.digital`.
    */
   lughApiUrl?: string;
-  scope?: string;
   refreshSkewSeconds?: number;
   /** Design system primary color (overrides `--lugh-primary`). */
   primaryColor?: string;
@@ -54,33 +55,32 @@ export interface LughProviderProps {
   /** Visual theme. Default: follows `prefers-color-scheme`. */
   theme?: LughTheme;
   children: ReactNode;
+  env?: LughEnvironment;
 }
 
 export function LughProvider({
   clientId,
   redirectUri,
   lughApiUrl,
-  scope,
   refreshSkewSeconds,
   primaryColor,
   language,
   theme,
   children,
+  env,
 }: LughProviderProps): JSX.Element {
   const [auth, setAuth] = useState<LughAuth | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
-  const [user, setUser] = useState<UserClaims | null>(null);
+  const [user, setUser] = useState<LughUserClaims | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   const resolvedApiUrl = (lughApiUrl ?? DEFAULT_LUGH_API_URL).replace(/\/+$/, "");
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
 
-    const opts: LughAuthOptions = { clientId, redirectUri, lughApiUrl: resolvedApiUrl };
-    if (scope !== undefined) opts.scope = scope;
+    const opts: LughAuthOptions = { clientId, redirectUri, lughApiUrl: resolvedApiUrl, env  };
     if (refreshSkewSeconds !== undefined) {
       opts.refreshSkewSeconds = refreshSkewSeconds;
     }
@@ -122,7 +122,6 @@ export function LughProvider({
     clientId,
     redirectUri,
     resolvedApiUrl,
-    scope,
     refreshSkewSeconds,
     language,
     theme,
@@ -153,6 +152,7 @@ export function LughProvider({
       language,
       theme,
       primaryColor,
+      env,
       signIn,
       signOut,
     }),
@@ -166,6 +166,7 @@ export function LughProvider({
       language,
       theme,
       primaryColor,
+      env,
       signIn,
       signOut,
     ],

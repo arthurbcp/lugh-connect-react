@@ -1,12 +1,11 @@
 "use client";
 import { useLugh } from "./hooks";
-export const SUPPORTED_LANGUAGES = ["pt", "en", "es"];
-export const DEFAULT_LANGUAGE = "en";
+export const SUPPORTED_LUGH_LANGUAGES = ["pt", "en", "es"];
+export const DEFAULT_LUGH_LANGUAGE = "en";
 /** Error messages are always in English regardless of the selected language. */
 export const ERROR_MESSAGES = {
     notSignedIn: "user not signed in",
-    invalidAmount: "amount must be a positive integer",
-    missingPublicToken: "LughProvider.publicToken is required to consume credits",
+    invalidCost: "cost must be a non-negative integer",
     providerMissing: "useLugh: must be used within <LughProvider>",
 };
 const pt = {
@@ -46,16 +45,16 @@ const es = {
     getMoreCredits: "Obtener más créditos",
 };
 const MESSAGES = { pt, en, es };
-export function isSupportedLanguage(lang) {
-    return SUPPORTED_LANGUAGES.includes(lang);
+export function isSupportedLughLanguage(lang) {
+    return SUPPORTED_LUGH_LANGUAGES.includes(lang);
 }
-export function getMessages(lang) {
-    if (lang && isSupportedLanguage(lang))
+export function getLughMessages(lang) {
+    if (lang && isSupportedLughLanguage(lang))
         return MESSAGES[lang];
-    return MESSAGES[DEFAULT_LANGUAGE];
+    return MESSAGES[DEFAULT_LUGH_LANGUAGE];
 }
 export function useLughMessages() {
     const { language } = useLugh();
-    return getMessages(language);
+    return getLughMessages(language);
 }
 //# sourceMappingURL=i18n.js.map

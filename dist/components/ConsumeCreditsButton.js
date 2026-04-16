@@ -15,29 +15,25 @@ export class InsufficientCreditsError extends Error {
         this.available = available;
     }
 }
-export function LughConsumeCreditsButton({ action, amount, children, className, classOverride, disabled, loadingLabel, onClick, onSuccess, onError, }) {
-    const { auth, publicToken, isSignedIn } = useLugh();
-    const { total, refetch } = useLughCredits();
+export function LughConsumeCreditsButton({ cost, children, className, classOverride, disabled, loadingLabel, onClick, onSuccess, onError, }) {
+    const { isSignedIn } = useLugh();
+    const { total } = useLughCredits();
     const t = useLughMessages();
     const [loading, setLoading] = useState(false);
     const [insufficient, setInsufficient] = useState(false);
-    const hasEnough = total >= amount;
+    const hasEnough = total >= cost;
     const handleClick = async () => {
-        if (!auth || !isSignedIn) {
+        if (!isSignedIn) {
             onError?.(new Error(ERROR_MESSAGES.notSignedIn));
             return;
         }
-        if (!Number.isInteger(amount) || amount <= 0) {
-            onError?.(new Error(ERROR_MESSAGES.invalidAmount));
+        if (!Number.isInteger(cost) || cost < 0) {
+            onError?.(new Error(ERROR_MESSAGES.invalidCost));
             return;
         }
-        if (!publicToken) {
-            onError?.(new Error(ERROR_MESSAGES.missingPublicToken));
-            return;
-        }
-        if (total < amount) {
+        if (total < cost) {
             setInsufficient(true);
-            onError?.(new InsufficientCreditsError(amount, total, t.insufficientCredits));
+            onError?.(new InsufficientCreditsError(cost, total, t.insufficientCredits));
             return;
         }
         setInsufficient(false);
@@ -46,9 +42,7 @@ export function LughConsumeCreditsButton({ action, amount, children, className, 
             if (onClick) {
                 await onClick();
             }
-            const data = await auth.api.credits.consume({ action, amount, publicToken });
-            onSuccess?.({ action, amount, response: data });
-            void refetch();
+            onSuccess?.();
         }
         catch (err) {
             onError?.(err instanceof Error ? err : new Error(String(err)));
@@ -61,6 +55,6 @@ export function LughConsumeCreditsButton({ action, amount, children, className, 
                     void handleClick();
                 }, disabled: disabled || loading || !isSignedIn || !hasEnough, "aria-busy": loading, children: loading
                     ? (loadingLabel ?? t.consumeLoading)
-                    : (children ?? t.consumeDefault(amount)) }), (insufficient || (isSignedIn && !hasEnough)) && (_jsxs("p", { className: "lugh-consume__insufficient", role: "alert", children: [_jsx("span", { children: t.insufficientCredits }), " ", _jsx("a", { className: "lugh-consume__link", href: UPGRADE_URL, target: "_blank", rel: "noopener noreferrer", children: t.getMoreCredits })] }))] }));
+                    : (children ?? t.consumeDefault(cost)) }), (insufficient || (isSignedIn && !hasEnough)) && (_jsxs("p", { className: "lugh-consume__insufficient", role: "alert", children: [_jsx("span", { children: t.insufficientCredits }), " ", _jsx("a", { className: "lugh-consume__link", href: UPGRADE_URL, target: "_blank", rel: "noopener noreferrer", children: t.getMoreCredits })] }))] }));
 }
 //# sourceMappingURL=ConsumeCreditsButton.js.map

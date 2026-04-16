@@ -1,9 +1,9 @@
-import type { CreditsBreakdown } from "lugh-connect";
+import type { LughCreditsBreakdown } from "lugh-connect";
 import { type LughContextValue } from "./provider";
 export declare function useLugh(): LughContextValue;
-export type { CreditBlock, CreditsBreakdown } from "lugh-connect";
+export type { LughCreditBlock, LughCreditsBreakdown } from "lugh-connect";
 export interface UseLughCreditsResult {
-    breakdown: CreditsBreakdown | null;
+    breakdown: LughCreditsBreakdown | null;
     total: number;
     loading: boolean;
     error: Error | null;

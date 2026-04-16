@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type JSX } from "react";
-import { useLughCredits, type CreditBlock } from "../hooks";
+import { useLughCredits, type LughCreditBlock } from "../hooks";
 import { useLughMessages } from "../i18n";
 
 export interface LughCreditsBadgeProps {
@@ -20,14 +20,19 @@ const UPGRADE_URL = "https://app.lugh.digital/en/pricing";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type Tone = "primary" | "emerald" | "amber";
+type Tone = "primary" | "orange" | "emerald" | "amber";
 
-function toneFor(block: CreditBlock): Tone {
+function isSandbox(plan: string | null): boolean {
+  return plan?.toLowerCase() === "sandbox";
+}
+
+function toneFor(block: LughCreditBlock): Tone {
   const daysLeft = Math.max(
     0,
     Math.ceil((block.expiresAt - Date.now()) / DAY_MS),
   );
   if (daysLeft <= 3) return "amber";
+  if (isSandbox(block.plan)) return "orange";
   return block.plan ? "primary" : "emerald";
 }
 
@@ -65,7 +70,7 @@ export function LughCreditsBadge({
   if (error) return null;
   if (loading && !breakdown) return null;
 
-  const blocks: CreditBlock[] = breakdown?.blocks ?? [];
+  const blocks: LughCreditBlock[] = breakdown?.blocks ?? [];
 
   return (
     <div
@@ -121,11 +126,11 @@ export function LughCreditsBadge({
                 return (
                   <div key={block.id} className="lugh-credits__block-row">
                     <div className="lugh-credits__block-head">
-                      <span className="lugh-credits__block-label">
+                      <span className={`lugh-credits__block-label${tone === "orange" ? " lugh-credits__block-label--orange" : ""}`}>
                         <BlockIcon isPack={block.plan === null} />
                         {label}
                       </span>
-                      <span className="lugh-credits__block-nums">
+                      <span className={`lugh-credits__block-nums${tone === "orange" ? " lugh-credits__block-nums--orange" : ""}`}>
                         {block.remaining.toLocaleString()} /{" "}
                         {block.amount.toLocaleString()}
                       </span>

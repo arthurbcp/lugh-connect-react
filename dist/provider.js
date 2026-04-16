@@ -3,7 +3,7 @@ import { jsx as _jsx } from "react/jsx-runtime";
 import { createContext, useCallback, useEffect, useMemo, useState, } from "react";
 import { DEFAULT_LUGH_API_URL, LughAuth, } from "lugh-connect";
 export const LughContext = createContext(null);
-export function LughProvider({ clientId, redirectUri, lughApiUrl, scope, refreshSkewSeconds, publicToken, primaryColor, language, theme, children, }) {
+export function LughProvider({ clientId, redirectUri, lughApiUrl, refreshSkewSeconds, primaryColor, language, theme, children, env, }) {
     const [auth, setAuth] = useState(null);
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [user, setUser] = useState(null);
@@ -14,9 +14,7 @@ export function LughProvider({ clientId, redirectUri, lughApiUrl, scope, refresh
         if (typeof window === "undefined")
             return;
         let cancelled = false;
-        const opts = { clientId, redirectUri, lughApiUrl: resolvedApiUrl };
-        if (scope !== undefined)
-            opts.scope = scope;
+        const opts = { clientId, redirectUri, lughApiUrl: resolvedApiUrl, env };
         if (refreshSkewSeconds !== undefined) {
             opts.refreshSkewSeconds = refreshSkewSeconds;
         }
@@ -58,7 +56,6 @@ export function LughProvider({ clientId, redirectUri, lughApiUrl, scope, refresh
         clientId,
         redirectUri,
         resolvedApiUrl,
-        scope,
         refreshSkewSeconds,
         language,
         theme,
@@ -77,7 +74,6 @@ export function LughProvider({ clientId, redirectUri, lughApiUrl, scope, refresh
     const value = useMemo(() => ({
         auth,
         lughApiUrl: resolvedApiUrl,
-        publicToken,
         isSignedIn,
         user,
         loading,
@@ -85,12 +81,12 @@ export function LughProvider({ clientId, redirectUri, lughApiUrl, scope, refresh
         language,
         theme,
         primaryColor,
+        env,
         signIn,
         signOut,
     }), [
         auth,
         resolvedApiUrl,
-        publicToken,
         isSignedIn,
         user,
         loading,
@@ -98,6 +94,7 @@ export function LughProvider({ clientId, redirectUri, lughApiUrl, scope, refresh
         language,
         theme,
         primaryColor,
+        env,
         signIn,
         signOut,
     ]);

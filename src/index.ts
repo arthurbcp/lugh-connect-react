@@ -6,11 +6,11 @@ export type {
 } from "./provider";
 
 export {
-  SUPPORTED_LANGUAGES,
-  DEFAULT_LANGUAGE,
+  SUPPORTED_LUGH_LANGUAGES,
+  DEFAULT_LUGH_LANGUAGE,
   ERROR_MESSAGES,
-  isSupportedLanguage,
-  getMessages,
+  isSupportedLughLanguage,
+  getLughMessages,
   useLughMessages,
 } from "./i18n";
 export type { LughLanguage, LughMessages } from "./i18n";
@@ -18,8 +18,8 @@ export type { LughLanguage, LughMessages } from "./i18n";
 export { useLugh, useLughCredits } from "./hooks";
 export type {
   UseLughCreditsResult,
-  CreditBlock,
-  CreditsBreakdown,
+  LughCreditBlock,
+  LughCreditsBreakdown,
 } from "./hooks";
 
 export { LughSignInButton } from "./components/SignInButton";
@@ -37,6 +37,6 @@ export type { LughCreditsBadgeProps } from "./components/CreditsBadge";
 export type {
   LughAuth,
   LughAuthOptions,
-  Tokens,
-  UserClaims,
+  LughTokens,
+  LughUserClaims,
 } from "lugh-connect";
