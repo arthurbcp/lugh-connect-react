@@ -3,6 +3,7 @@ export type {
   LughProviderProps,
   LughContextValue,
   LughTheme,
+  LughEnvironment,
 } from "./provider";
 
 export {
@@ -33,6 +34,16 @@ export type { LughConsumeCreditsButtonProps } from "./components/ConsumeCreditsB
 
 export { LughCreditsBadge } from "./components/CreditsBadge";
 export type { LughCreditsBadgeProps } from "./components/CreditsBadge";
+
+export {
+  getBalance,
+  getBalanceBreakdown,
+  openCreditRequest,
+  type LughEnvironmentArg,
+  type GetBalanceRef,
+  type GetBalanceBreakdownRef,
+  type OpenCreditRequestRef,
+} from "./convexApi";
 
 export type {
   LughAuth,

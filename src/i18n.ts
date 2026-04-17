@@ -17,6 +17,8 @@ export interface LughMessages {
   consumeLoading: string;
   insufficientCredits: string;
   getMoreCredits: string;
+  errorTitle: string;
+  errorRetry: string;
 }
 
 /** Error messages are always in English regardless of the selected language. */
@@ -37,6 +39,8 @@ const pt: LughMessages = {
   consumeLoading: "...",
   insufficientCredits: "Você não possui créditos suficientes.",
   getMoreCredits: "Adquirir mais créditos",
+  errorTitle: "Algo deu errado",
+  errorRetry: "Tentar novamente",
 };
 
 const en: LughMessages = {
@@ -50,6 +54,8 @@ const en: LughMessages = {
   consumeLoading: "...",
   insufficientCredits: "You don't have enough credits.",
   getMoreCredits: "Get more credits",
+  errorTitle: "Something went wrong",
+  errorRetry: "Try again",
 };
 
 const es: LughMessages = {
@@ -63,6 +69,8 @@ const es: LughMessages = {
   consumeLoading: "...",
   insufficientCredits: "No tienes suficientes créditos.",
   getMoreCredits: "Obtener más créditos",
+  errorTitle: "Algo salió mal",
+  errorRetry: "Intentar de nuevo",
 };
 
 const MESSAGES: Record<LughLanguage, LughMessages> = { pt, en, es };

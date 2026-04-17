@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type JSX, type ReactNode } from "react";
+import { useContext, useState, type JSX, type ReactNode } from "react";
 import { useLugh, useLughCredits } from "../hooks";
 import { useLughMessages, ERROR_MESSAGES } from "../i18n";
+import { DEFAULT_LUGH_PRICING_URL, LughContext } from "../provider";
 
 export interface LughConsumeCreditsButtonProps {
   /**
@@ -32,8 +33,6 @@ export interface LughConsumeCreditsButtonProps {
   onError?: (err: Error) => void;
 }
 
-const UPGRADE_URL = "https://app.lugh.digital/en/pricing";
-
 export class InsufficientCreditsError extends Error {
   readonly code = "insufficient_credits" as const;
   readonly required: number;
@@ -60,6 +59,8 @@ export function LughConsumeCreditsButton({
   const { isSignedIn } = useLugh();
   const { total } = useLughCredits();
   const t = useLughMessages();
+  const ctx = useContext(LughContext);
+  const upgradeUrl = ctx?.pricingUrl ?? DEFAULT_LUGH_PRICING_URL;
   const [loading, setLoading] = useState<boolean>(false);
   const [insufficient, setInsufficient] = useState<boolean>(false);
 
@@ -118,7 +119,7 @@ export function LughConsumeCreditsButton({
           <span>{t.insufficientCredits}</span>{" "}
           <a
             className="lugh-consume__link"
-            href={UPGRADE_URL}
+            href={upgradeUrl}
             target="_blank"
             rel="noopener noreferrer"
           >

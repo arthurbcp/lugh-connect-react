@@ -24,10 +24,13 @@ export type { LughTheme };
 
 export type LughEnvironment = "production" | "sandbox";
 
+export const DEFAULT_LUGH_PRICING_URL = "https://app.lugh.digital/en/pricing";
+
 export interface LughContextValue {
   auth: LughAuth | null;
   apiUrl: string;
   cloudUrl: string;
+  pricingUrl: string;
   isSignedIn: boolean;
   user: LughUserClaims | null;
   loading: boolean;
@@ -104,6 +107,11 @@ export interface LughProviderProps {
    * Base URL of the Lugh app authorization server (no trailing slash).
    */
   apiUrl: string;
+  /**
+   * Destino do link "get more credits" dos componentes (CreditsBadge,
+   * ConsumeCreditsButton). Default: página pública de pricing do Lugh.
+   */
+  pricingUrl?: string;
   refreshSkewSeconds?: number;
   /** Design system primary color (overrides `--lugh-primary`). */
   primaryColor?: string;
@@ -120,6 +128,7 @@ export function LughProvider({
   redirectUri,
   cloudUrl,
   apiUrl,
+  pricingUrl,
   refreshSkewSeconds,
   primaryColor,
   language,
@@ -127,6 +136,7 @@ export function LughProvider({
   children,
   env,
 }: LughProviderProps): JSX.Element {
+  const resolvedPricingUrl = pricingUrl ?? DEFAULT_LUGH_PRICING_URL;
   const [auth, setAuth] = useState<LughAuth | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [user, setUser] = useState<LughUserClaims | null>(null);
@@ -219,6 +229,7 @@ export function LughProvider({
       auth,
       apiUrl: resolvedApiUrl,
       cloudUrl,
+      pricingUrl: resolvedPricingUrl,
       isSignedIn,
       user,
       loading,
@@ -235,6 +246,7 @@ export function LughProvider({
       auth,
       resolvedApiUrl,
       cloudUrl,
+      resolvedPricingUrl,
       isSignedIn,
       user,
       loading,

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useContext, useEffect, useRef, useState, type JSX } from "react";
 import { useLughCredits, type LughCreditBlock } from "../hooks";
 import { useLughMessages } from "../i18n";
+import { DEFAULT_LUGH_PRICING_URL, LughContext } from "../provider";
 
 export interface LughCreditsBadgeProps {
   /** Título do popover. Default: tradução de `creditsTitle`. */
@@ -15,8 +16,6 @@ export interface LughCreditsBadgeProps {
   emptyLabel?: string;
   className?: string;
 }
-
-const UPGRADE_URL = "https://app.lugh.digital/en/pricing";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -45,6 +44,8 @@ export function LughCreditsBadge({
 }: LughCreditsBadgeProps): JSX.Element | null {
   const { breakdown, total, loading, error } = useLughCredits();
   const t = useLughMessages();
+  const ctx = useContext(LughContext);
+  const upgradeUrl = ctx?.pricingUrl ?? DEFAULT_LUGH_PRICING_URL;
   const resolvedTitle = title ?? t.creditsTitle;
   const resolvedPackLabel = blockPackLabel ?? t.creditsPackLabel;
   const resolvedEmptyLabel = emptyLabel ?? t.creditsEmpty;
@@ -151,7 +152,7 @@ export function LughCreditsBadge({
 
           <a
             className="lugh-credits__upgrade"
-            href={UPGRADE_URL}
+            href={upgradeUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
