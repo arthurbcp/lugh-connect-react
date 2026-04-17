@@ -3,6 +3,7 @@
 import {
   createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
@@ -11,20 +12,22 @@ import {
   type ReactNode,
 } from "react";
 import {
-  DEFAULT_LUGH_API_URL,
   LughAuth,
-  type LughEnvironment,
   type LughAuthOptions,
   type LughTheme,
   type LughUserClaims,
 } from "lugh-connect";
+import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import type { LughLanguage } from "./i18n";
 
 export type { LughTheme };
 
+export type LughEnvironment = "production" | "sandbox";
+
 export interface LughContextValue {
   auth: LughAuth | null;
-  lughApiUrl: string;
+  apiUrl: string;
+  cloudUrl: string;
   isSignedIn: boolean;
   user: LughUserClaims | null;
   loading: boolean;
@@ -33,20 +36,74 @@ export interface LughContextValue {
   theme: LughTheme | undefined;
   primaryColor: string | undefined;
   env: LughEnvironment | undefined;
+  clientId: string;
   signIn: () => Promise<void>;
   signOut: (opts?: { revoke?: boolean }) => Promise<void>;
 }
 
 export const LughContext = createContext<LughContextValue | null>(null);
 
+// Hook consumido pelo `ConvexProviderWithAuth`. Precisa retornar um objeto
+// com identidade **estável** entre renders quando o estado não mudou —
+// Convex compara por referência pra decidir se reinicia a subscription.
+// Criar um objeto novo a cada render causa loop infinito de
+// `fetchAccessToken(forceRefreshToken: true)`. Daí o `useMemo` com deps
+// primitivas + a referência da instância de `LughAuth`.
+function useAuthFromLugh(): {
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  fetchAccessToken: (args: {
+    forceRefreshToken: boolean;
+  }) => Promise<string | null>;
+} {
+  const ctx = useContext(LughContext);
+  const auth = ctx?.auth ?? null;
+  const isSignedIn = ctx?.isSignedIn ?? false;
+  const loading = ctx?.loading ?? true;
+
+  const fetchAccessToken = useCallback(
+    async ({
+      forceRefreshToken,
+    }: {
+      forceRefreshToken: boolean;
+    }): Promise<string | null> => {
+      if (!auth) return null;
+      if (forceRefreshToken) {
+        try {
+          const next = await auth.refresh();
+          return next.access_token ?? null;
+        } catch {
+          return null;
+        }
+      }
+      return auth.accessToken;
+    },
+    [auth],
+  );
+
+  return useMemo(
+    () => ({
+      isLoading: loading,
+      isAuthenticated: Boolean(isSignedIn && auth),
+      fetchAccessToken,
+    }),
+    [loading, isSignedIn, auth, fetchAccessToken],
+  );
+}
+
 export interface LughProviderProps {
   clientId: string;
   redirectUri: string;
   /**
-   * Base URL of the lugh-api authorization server (no trailing slash).
-   * Default: `https://api.lugh.digital`.
+   * URL do deployment Convex do lugh-app (ex:
+   * `https://<slug>.convex.cloud`). O saldo de créditos é servido direto
+   * daqui via queries reativas — sem polling.
    */
-  lughApiUrl?: string;
+  cloudUrl: string;
+  /**
+   * Base URL of the Lugh app authorization server (no trailing slash).
+   */
+  apiUrl: string;
   refreshSkewSeconds?: number;
   /** Design system primary color (overrides `--lugh-primary`). */
   primaryColor?: string;
@@ -61,7 +118,8 @@ export interface LughProviderProps {
 export function LughProvider({
   clientId,
   redirectUri,
-  lughApiUrl,
+  cloudUrl,
+  apiUrl,
   refreshSkewSeconds,
   primaryColor,
   language,
@@ -75,12 +133,26 @@ export function LughProvider({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const resolvedApiUrl = (lughApiUrl ?? DEFAULT_LUGH_API_URL).replace(/\/+$/, "");
+  const resolvedApiUrl = apiUrl.replace(/\/+$/, "");
+
+  // `ConvexReactClient` é stateful (abre websocket, mantém subscriptions).
+  // Uma instância por URL, criada **uma vez** — reagir à mudança de URL
+  // implica reassinar tudo. `useMemo` basta porque as deps quase nunca
+  // mudam em runtime.
+  const convex = useMemo(
+    () => new ConvexReactClient(cloudUrl),
+    [cloudUrl],
+  );
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
 
-    const opts: LughAuthOptions = { clientId, redirectUri, lughApiUrl: resolvedApiUrl, env  };
+    const opts: LughAuthOptions = {
+      clientId,
+      redirectUri,
+      lughApiUrl: resolvedApiUrl,
+    };
     if (refreshSkewSeconds !== undefined) {
       opts.refreshSkewSeconds = refreshSkewSeconds;
     }
@@ -126,6 +198,7 @@ export function LughProvider({
     language,
     theme,
     primaryColor,
+    env,
   ]);
 
   const signIn = useCallback(async (): Promise<void> => {
@@ -144,7 +217,8 @@ export function LughProvider({
   const value = useMemo<LughContextValue>(
     () => ({
       auth,
-      lughApiUrl: resolvedApiUrl,
+      apiUrl: resolvedApiUrl,
+      cloudUrl,
       isSignedIn,
       user,
       loading,
@@ -153,12 +227,14 @@ export function LughProvider({
       theme,
       primaryColor,
       env,
+      clientId,
       signIn,
       signOut,
     }),
     [
       auth,
       resolvedApiUrl,
+      cloudUrl,
       isSignedIn,
       user,
       loading,
@@ -167,6 +243,7 @@ export function LughProvider({
       theme,
       primaryColor,
       env,
+      clientId,
       signIn,
       signOut,
     ],
@@ -181,14 +258,17 @@ export function LughProvider({
 
   return (
     <LughContext.Provider value={value}>
-      <div
-        className="lugh-root"
-        data-lugh-theme={theme}
-        lang={language}
-        style={wrapperStyle}
-      >
-        {children}
-      </div>
+      <ConvexProviderWithAuth client={convex} useAuth={useAuthFromLugh}>
+        <div
+          className="lugh-root"
+          data-lugh-theme={theme}
+          lang={language}
+          style={wrapperStyle}
+        >
+          {children}
+        </div>
+      </ConvexProviderWithAuth>
     </LughContext.Provider>
   );
 }
+
