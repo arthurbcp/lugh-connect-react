@@ -40,6 +40,19 @@ export type OpenCreditRequestRef = FunctionReference<
   { requestId: string; expiresAt: number; creditsReserved: number }
 >;
 
+export interface LughAppAction {
+  slug: string;
+  amount: number;
+  name: string;
+}
+
+export type ListAppActionsRef = FunctionReference<
+  "query",
+  "public",
+  { appSlug: string },
+  LughAppAction[]
+>;
+
 export const getBalance = makeFunctionReference<"query">(
   "partnerApi:getBalance",
 ) as GetBalanceRef;
@@ -51,3 +64,7 @@ export const getBalanceBreakdown = makeFunctionReference<"query">(
 export const openCreditRequest = makeFunctionReference<"mutation">(
   "partnerApi:openCreditRequest",
 ) as OpenCreditRequestRef;
+
+export const listAppActions = makeFunctionReference<"query">(
+  "partnerApi:listAppActions",
+) as ListAppActionsRef;

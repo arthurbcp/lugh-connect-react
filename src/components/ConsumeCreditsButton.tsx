@@ -1,19 +1,39 @@
 "use client";
 
 import { useContext, useState, type JSX, type ReactNode } from "react";
-import { useLugh, useLughCredits } from "../hooks";
+import { useMutation } from "convex/react";
+import { useLugh, useLughActions, useLughCredits } from "../hooks";
 import { useLughMessages, ERROR_MESSAGES } from "../i18n";
 import { DEFAULT_LUGH_PRICING_URL, LughContext } from "../provider";
+import { openCreditRequest, type LughEnvironmentArg } from "../convexApi";
+
+export interface LughConsumeRequestContext {
+  /** ID da reserva criada por `openCreditRequest`. Passe pro seu backend pra confirmar o débito. */
+  requestId: string;
+  /** Quantidade de créditos reservados no lugh-app (fonte da verdade é server-side). */
+  creditsReserved: number;
+  /** Epoch ms de expiração da reserva — o backend tem até esse instante pra confirmar. */
+  expiresAt: number;
+}
 
 export interface LughConsumeCreditsButtonProps {
   /**
-   * Quantidade de créditos que esta ação custa. Usado **apenas** para UX
-   * client-side: desabilita o botão quando `total < cost` e formata o label
-   * default. O débito real acontece no backend do integrador (dentro do
-   * `onClick`), que chama `PUT /api/v1/credits/consume` no lugh-app com a
-   * private key do app — esse valor aqui não autoriza nada.
+   * Slug da ação cobrada — precisa existir como `app_action` publicada para
+   * o app no lugh-app. O custo é resolvido automaticamente a partir dele
+   * via `useLughActions()` (com cache em `localStorage` pra evitar flash
+   * de loading). Passado também pra `openCreditRequest` no clique.
    */
-  cost: number;
+  actionSlug: string;
+  /**
+   * Override opcional do environment. Default: o `env` do `LughProvider`
+   * (ou `"production"` se não definido).
+   */
+  environment?: LughEnvironmentArg;
+  /**
+   * Chave de idempotência opcional. Se o usuário clicar duas vezes, o
+   * lugh-app devolve a mesma reserva em vez de criar outra.
+   */
+  idempotencyKey?: string;
   children?: ReactNode;
   className?: string;
   /** Substitui completamente as classes padrão do botão (`lugh-btn lugh-btn--gradient`). */
@@ -22,14 +42,15 @@ export interface LughConsumeCreditsButtonProps {
   /** Texto exibido enquanto a request está em andamento. */
   loadingLabel?: ReactNode;
   /**
-   * Handler do clique. **É aqui que o integrador faz o trabalho pago** —
-   * tipicamente um `fetch` para uma rota do próprio backend que, por sua
-   * vez, chama `PUT /api/v1/credits/consume` server-to-server usando a
-   * private key do app. Pode ser sync ou async. Se lançar, o erro vira
-   * `onError`; se resolver, `onSuccess` é chamado.
+   * Handler do clique. O botão **já abriu a reserva** via `openCreditRequest`
+   * antes de chamar isto — é aqui que o integrador faz o trabalho pago,
+   * tipicamente um `fetch` pra uma rota do próprio backend que confirma
+   * via lugh-sdk (`PUT /api/v1/credits/consume`) usando a private key.
+   * Pode ser sync ou async. Se lançar, o erro vira `onError`; se resolver,
+   * `onSuccess` é chamado.
    */
-  onClick?: () => void | Promise<void>;
-  onSuccess?: () => void;
+  onClick?: (ctx: LughConsumeRequestContext) => void | Promise<void>;
+  onSuccess?: (ctx: LughConsumeRequestContext) => void;
   onError?: (err: Error) => void;
 }
 
@@ -45,8 +66,20 @@ export class InsufficientCreditsError extends Error {
   }
 }
 
+export class ActionNotFoundError extends Error {
+  readonly code = "action_not_found" as const;
+  readonly actionSlug: string;
+  constructor(actionSlug: string) {
+    super(`No action registered with slug "${actionSlug}".`);
+    this.name = "ActionNotFoundError";
+    this.actionSlug = actionSlug;
+  }
+}
+
 export function LughConsumeCreditsButton({
-  cost,
+  actionSlug,
+  environment,
+  idempotencyKey,
   children,
   className,
   classOverride,
@@ -56,23 +89,27 @@ export function LughConsumeCreditsButton({
   onSuccess,
   onError,
 }: LughConsumeCreditsButtonProps): JSX.Element {
-  const { isSignedIn } = useLugh();
+  const { isSignedIn, clientId, env } = useLugh();
   const { total } = useLughCredits();
+  const { byslug, loading: actionsLoading } = useLughActions();
   const t = useLughMessages();
   const ctx = useContext(LughContext);
   const upgradeUrl = ctx?.pricingUrl ?? DEFAULT_LUGH_PRICING_URL;
+  const openRequest = useMutation(openCreditRequest);
   const [loading, setLoading] = useState<boolean>(false);
   const [insufficient, setInsufficient] = useState<boolean>(false);
 
-  const hasEnough = total >= cost;
+  const action = byslug(actionSlug);
+  const cost = action?.amount ?? null;
+  const hasEnough = cost !== null && total >= cost;
 
   const handleClick = async (): Promise<void> => {
     if (!isSignedIn) {
       onError?.(new Error(ERROR_MESSAGES.notSignedIn));
       return;
     }
-    if (!Number.isInteger(cost) || cost < 0) {
-      onError?.(new Error(ERROR_MESSAGES.invalidCost));
+    if (cost === null) {
+      onError?.(new ActionNotFoundError(actionSlug));
       return;
     }
 
@@ -87,16 +124,32 @@ export function LughConsumeCreditsButton({
 
     setLoading(true);
     try {
+      const opened = await openRequest({
+        appSlug: clientId,
+        actionSlug,
+        environment: environment ?? env ?? "production",
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+      });
+      const requestCtx: LughConsumeRequestContext = {
+        requestId: opened.requestId,
+        creditsReserved: opened.creditsReserved,
+        expiresAt: opened.expiresAt,
+      };
       if (onClick) {
-        await onClick();
+        await onClick(requestCtx);
       }
-      onSuccess?.();
+      onSuccess?.(requestCtx);
     } catch (err: unknown) {
       onError?.(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }
   };
+
+  const label =
+    loading
+      ? (loadingLabel ?? t.consumeLoading)
+      : children ?? (cost !== null ? t.consumeDefault(cost) : t.consumeLoading);
 
   return (
     <div className="lugh-consume">
@@ -106,15 +159,20 @@ export function LughConsumeCreditsButton({
         onClick={() => {
           void handleClick();
         }}
-        disabled={disabled || loading || !isSignedIn || !hasEnough}
+        disabled={
+          disabled ||
+          loading ||
+          !isSignedIn ||
+          actionsLoading ||
+          cost === null ||
+          !hasEnough
+        }
         aria-busy={loading}
       >
-        {loading
-          ? (loadingLabel ?? t.consumeLoading)
-          : (children ?? t.consumeDefault(cost))}
+        {label}
       </button>
 
-      {(insufficient || (isSignedIn && !hasEnough)) && (
+      {(insufficient || (isSignedIn && cost !== null && !hasEnough)) && (
         <p className="lugh-consume__insufficient" role="alert">
           <span>{t.insufficientCredits}</span>{" "}
           <a

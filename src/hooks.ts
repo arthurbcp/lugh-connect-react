@@ -1,10 +1,15 @@
 "use client";
 
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { LughContext, type LughContextValue } from "./provider";
 import { ERROR_MESSAGES } from "./i18n";
-import { getBalanceBreakdown, type LughEnvironmentArg } from "./convexApi";
+import {
+  getBalanceBreakdown,
+  listAppActions,
+  type LughAppAction,
+  type LughEnvironmentArg,
+} from "./convexApi";
 
 export function useLugh(): LughContextValue {
   const ctx = useContext(LughContext);
@@ -92,5 +97,85 @@ export function useLughCredits(): UseLughCreditsResult {
       },
     }),
     [breakdown, total, loading],
+  );
+}
+
+export interface UseLughActionsResult {
+  /** Array de `{ slug, amount, name }` do app atual. `null` até a 1ª carga. */
+  actions: LughAppAction[] | null;
+  /** `true` apenas se ainda não tem dado (nem cache, nem resposta). */
+  loading: boolean;
+  /** Retorna a action pelo slug ou `null` se não existe/ainda carregando. */
+  byslug: (slug: string) => LughAppAction | null;
+}
+
+const ACTIONS_CACHE_PREFIX = "lugh:actions:";
+
+function readCachedActions(appSlug: string): LughAppAction[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(ACTIONS_CACHE_PREFIX + appSlug);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    const valid = parsed.filter(
+      (a): a is LughAppAction =>
+        typeof a === "object" &&
+        a !== null &&
+        typeof (a as { slug?: unknown }).slug === "string" &&
+        typeof (a as { amount?: unknown }).amount === "number" &&
+        typeof (a as { name?: unknown }).name === "string",
+    );
+    return valid;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedActions(appSlug: string, actions: LughAppAction[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      ACTIONS_CACHE_PREFIX + appSlug,
+      JSON.stringify(actions),
+    );
+  } catch {
+    /* quota/cookies off — ignore */
+  }
+}
+
+// Catálogo de actions do app (`{ slug, amount, name }[]`). Usa o `clientId`
+// do `LughProvider` como appSlug. Seeded por `localStorage` pra evitar
+// flash de loading a cada page load — quando o Convex responde, o cache é
+// sobrescrito com o valor fresco.
+export function useLughActions(): UseLughActionsResult {
+  const { clientId } = useLugh();
+  const [cached, setCached] = useState<LughAppAction[] | null>(() =>
+    readCachedActions(clientId),
+  );
+
+  // Se trocar o appSlug (raro mas possível em dev), re-seed do cache.
+  useEffect(() => {
+    setCached(readCachedActions(clientId));
+  }, [clientId]);
+
+  const fresh = useQuery(listAppActions, { appSlug: clientId });
+
+  useEffect(() => {
+    if (fresh === undefined) return;
+    writeCachedActions(clientId, fresh);
+    setCached(fresh);
+  }, [clientId, fresh]);
+
+  const actions = fresh ?? cached;
+  const loading = actions === null;
+
+  return useMemo(
+    () => ({
+      actions,
+      loading,
+      byslug: (slug) => actions?.find((a) => a.slug === slug) ?? null,
+    }),
+    [actions, loading],
   );
 }
